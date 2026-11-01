@@ -1,0 +1,9 @@
+# Multicore Benchmark Report
+# CPU: AMD Ryzen 5 (AMD64 Family 25 Model 80 Stepping 0), Logical Cores: 12, Physical Cores: 6, RAM: 7.350000 GB
+# Compiler: GCC 14.1.0 (MinGW-w64 x86_64), Flags: -O3 -std=c++17 -march=x86-64
+# Workload: 2000 independent solves, N=100 elements per solve, Seed=42
+# Warmup Time: 6.004000 ms, Launch-to-Ready Time: 12.400000 ms
+workers,rep1_ms,rep2_ms,rep3_ms,rep4_ms,rep5_ms,median_ms,speedup_T1_Tp,efficiency,max_abs_diff_C,agreement_pass
+1,10.127000,9.378000,9.709000,9.505000,10.587000,9.709000,1.000000,1.000000,0.000000,PASS
+2,7.490000,6.193000,7.368000,5.725000,6.036000,6.193000,1.567738,0.783869,0.000000,PASS
+4,4.860000,4.645000,3.608000,5.368000,4.408000,4.645000,2.090205,0.522551,0.000000,PASS
