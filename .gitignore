@@ -1,0 +1,15 @@
+# Build tools and local binaries
+build_tools/
+build/
+bin/
+*.o
+*.obj
+*.exe.stackdump
+.vscode/.browse*
+
+# Python cache
+__pycache__/
+*.pyc
+
+# Distribution zip (do not track archive itself in repo)
+*.zip

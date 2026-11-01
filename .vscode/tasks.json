@@ -1,0 +1,28 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Build All (CMake)",
+      "type": "shell",
+      "command": "cmake --build build --config Release",
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      },
+      "problemMatcher": ["$gcc"]
+    },
+    {
+      "label": "Run Tests",
+      "type": "shell",
+      "command": ".\\bin\\run_tests.exe",
+      "group": "test",
+      "problemMatcher": []
+    },
+    {
+      "label": "Export Benchmark CSVs",
+      "type": "shell",
+      "command": ".\\bin\\workbench_server.exe --export",
+      "problemMatcher": []
+    }
+  ]
+}
