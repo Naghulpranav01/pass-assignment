@@ -1,0 +1,151 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1100 700" width="100%" height="100%">
+  <defs>
+    <style>
+      .bg { fill: #0f172a; }
+      .box { fill: #1e293b; stroke: #38bdf8; stroke-width: 2; rx: 8; }
+      .subbox { fill: #090d16; stroke: #475569; stroke-width: 1.5; rx: 4; }
+      .title { fill: #f8fafc; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; font-weight: bold; font-size: 16px; }
+      .subtitle { fill: #94a3b8; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; font-size: 12px; }
+      .label { fill: #38bdf8; font-family: 'JetBrains Mono', Consolas, monospace; font-size: 11px; }
+      .text { fill: #e2e8f0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; font-size: 12px; }
+      .wire-usb { stroke: #06b6d4; stroke-width: 2.5; stroke-dasharray: 6,4; fill: none; }
+      .wire-pwr { stroke: #ef4444; stroke-width: 2; fill: none; }
+      .wire-gnd { stroke: #10b981; stroke-width: 2; fill: none; }
+      .wire-jtag { stroke: #f59e0b; stroke-width: 2.5; fill: none; }
+      .wire-gpio { stroke: #a855f7; stroke-width: 2; fill: none; }
+      .tag-pwr { fill: #ef4444; font-family: monospace; font-size: 10px; font-weight: bold; }
+      .tag-jtag { fill: #f59e0b; font-family: monospace; font-size: 10px; font-weight: bold; }
+      .tag-usb { fill: #06b6d4; font-family: monospace; font-size: 10px; font-weight: bold; }
+    </style>
+    <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#38bdf8" />
+    </marker>
+    <marker id="arrow-jtag" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#f59e0b" />
+    </marker>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1100" height="700" class="bg" />
+
+  <!-- Diagram Title Banner -->
+  <text x="550" y="38" text-anchor="middle" class="title" font-size="20">MODULAR HOST-CONNECTED EMBEDDED WORKBENCH ARCHITECTURE</text>
+  <text x="550" y="58" text-anchor="middle" class="subtitle">Heterogeneous System Integration: Host PC, MCU, FPGA, and Isolated JTAG Debug Controller</text>
+
+  <!-- 1. HOST PC BLOCK -->
+  <rect x="50" y="90" width="1000" height="120" class="box" stroke="#06b6d4" />
+  <text x="75" y="125" class="title" fill="#06b6d4">ENGINEERING WORKSTATION (WINDOWS 11 x64 HOST)</text>
+  <text x="75" y="145" class="subtitle">Unified Engineering Workbench Application (C++17 Engine + Local Browser UI)</text>
+
+  <!-- Host USB Ports -->
+  <rect x="120" y="160" width="220" height="36" class="subbox" />
+  <text x="230" y="183" text-anchor="middle" class="label">USB Port 1: CDC-ACM (COM3)</text>
+
+  <rect x="440" y="160" width="220" height="36" class="subbox" />
+  <text x="550" y="183" text-anchor="middle" class="label">USB Port 2: FTDI D2XX / FIFO</text>
+
+  <rect x="760" y="160" width="220" height="36" class="subbox" />
+  <text x="870" y="183" text-anchor="middle" class="label">USB Port 3: WinUSB / J-Link</text>
+
+  <!-- USB Connection Lines -->
+  <path d="M 230 196 L 230 270" class="wire-usb" marker-end="url(#arrow)" />
+  <text x="240" y="235" class="tag-usb">USB 2.0 (115.2 kbps)</text>
+
+  <path d="M 550 196 L 550 270" class="wire-usb" marker-end="url(#arrow)" />
+  <text x="560" y="235" class="tag-usb">USB 2.0 High-Speed (40 MB/s)</text>
+
+  <path d="M 870 196 L 870 270" class="wire-usb" marker-end="url(#arrow)" />
+  <text x="880" y="235" class="tag-usb">USB 2.0 High-Speed (TAP Ctl)</text>
+
+  <!-- 2. DEVICE 1: MCU BOARD -->
+  <rect x="50" y="270" width="300" height="380" class="box" stroke="#10b981" />
+  <text x="70" y="300" class="title" fill="#10b981">DEVICE 1: MCU BOARD</text>
+  <text x="70" y="318" class="subtitle">STM32H753ZI (Arm Cortex-M7 @ 480 MHz)</text>
+
+  <rect x="70" y="335" width="260" height="60" class="subbox" />
+  <text x="85" y="355" class="text" font-weight="bold">Power Domain:</text>
+  <text x="85" y="372" class="text">VDD = 3.3V I/O | VCORE = 1.2V LDO</text>
+  <text x="85" y="386" class="subtitle">Isolated Ground plane / Common Star</text>
+
+  <rect x="70" y="405" width="260" height="65" class="subbox" />
+  <text x="85" y="425" class="text" font-weight="bold">Host Communication:</text>
+  <text x="85" y="442" class="text">Native USB OTG_FS CDC-ACM Virtual COM</text>
+  <text x="85" y="458" class="subtitle">Streaming: Core Temp, VDD, CPU load</text>
+
+  <rect x="70" y="480" width="260" height="85" class="subbox" />
+  <text x="85" y="500" class="text" font-weight="bold">Debug Interface (Target):</text>
+  <text x="85" y="518" class="text">10-pin 1.27mm Arm Cortex JTAG Header</text>
+  <text x="85" y="534" class="label">VREF=3.3V, TCK, TMS/SWDIO,</text>
+  <text x="85" y="548" class="label">TDI, TDO/SWO, nRESET</text>
+
+  <rect x="70" y="575" width="260" height="60" class="subbox" />
+  <text x="85" y="595" class="text" font-weight="bold">Level Shifting:</text>
+  <text x="85" y="612" class="text">TXS0108E Bi-directional (3.3V &lt;-&gt; 1.8V)</text>
+  <text x="85" y="626" class="subtitle">Inter-chip SPI/UART to FPGA</text>
+
+  <!-- 3. DEVICE 2: FPGA BOARD -->
+  <rect x="400" y="270" width="300" height="380" class="box" stroke="#a855f7" />
+  <text x="420" y="300" class="title" fill="#a855f7">DEVICE 2: FPGA BOARD</text>
+  <text x="420" y="318" class="subtitle">Xilinx Artix-7 XC7A100T-1CSG324C</text>
+
+  <rect x="420" y="335" width="260" height="60" class="subbox" />
+  <text x="435" y="355" class="text" font-weight="bold">Multi-Voltage Domains:</text>
+  <text x="435" y="372" class="text">VCCINT=1.0V | VCCAUX=1.8V | VCCO=3.3V</text>
+  <text x="435" y="386" class="subtitle">PMIC Sequencing: 1.0V -&gt; 1.8V -&gt; 3.3V</text>
+
+  <rect x="420" y="405" width="260" height="65" class="subbox" />
+  <text x="435" y="425" class="text" font-weight="bold">Host Communication:</text>
+  <text x="435" y="442" class="text">FTDI FT2232H Synchronous FIFO Bridge</text>
+  <text x="435" y="458" class="subtitle">Streaming: Die Temp, VCCINT, LUT/DSP %</text>
+
+  <rect x="420" y="480" width="260" height="85" class="subbox" />
+  <text x="435" y="500" class="text" font-weight="bold">Debug Interface (Target):</text>
+  <text x="435" y="518" class="text">14-pin 2.0mm Xilinx JTAG Header</text>
+  <text x="435" y="534" class="label">VREF=1.8V / 3.3V, TCK, TMS,</text>
+  <text x="435" y="548" class="label">TDI, TDO, PROGRAM_B, DONE</text>
+
+  <rect x="420" y="575" width="260" height="60" class="subbox" />
+  <text x="435" y="595" class="text" font-weight="bold">Inter-IC Link:</text>
+  <text x="435" y="612" class="text">Synchronous SPI + Handshake INT</text>
+  <text x="435" y="626" class="subtitle">Connected to MCU via Level Shifter</text>
+
+  <!-- 4. DEVICE 3: JTAG DEBUG ADAPTER -->
+  <rect x="750" y="270" width="300" height="380" class="box" stroke="#f59e0b" />
+  <text x="770" y="300" class="title" fill="#f59e0b">DEVICE 3: JTAG DEBUG PROBE</text>
+  <text x="770" y="318" class="subtitle">SEGGER J-Link / FTDI FT2232H TAP Controller</text>
+
+  <rect x="770" y="335" width="260" height="60" class="subbox" />
+  <text x="785" y="355" class="text" font-weight="bold">Architectural Role:</text>
+  <text x="785" y="372" class="text">External TAP Master (IEEE 1149.1)</text>
+  <text x="785" y="386" class="subtitle">NOT an interchangeable compute board!</text>
+
+  <rect x="770" y="405" width="260" height="65" class="subbox" />
+  <text x="785" y="425" class="text" font-weight="bold">Target Voltage Sensing (VREF):</text>
+  <text x="785" y="442" class="text">Automatic level matching: 1.2V to 5.0V</text>
+  <text x="785" y="458" class="subtitle">Prevents logic contention / overstress</text>
+
+  <rect x="770" y="480" width="260" height="85" class="subbox" />
+  <text x="785" y="500" class="text" font-weight="bold">JTAG Signal Ownership:</text>
+  <text x="785" y="518" class="tag-jtag">DRIVEN: TCK, TMS, TDI, nSRST</text>
+  <text x="785" y="534" class="tag-jtag">INPUT (Sampled): TDO, VREF Sense</text>
+  <text x="785" y="550" class="subtitle">Clock rate: programmable up to 15 MHz</text>
+
+  <rect x="770" y="575" width="260" height="60" class="subbox" />
+  <text x="785" y="595" class="text" font-weight="bold">Boundary Scan Chain:</text>
+  <text x="785" y="612" class="text">Multi-drop TAP chain or dedicated headers</text>
+  <text x="785" y="626" class="subtitle">IDCODEs: Cortex-M7 &amp; Artix-7 TAPs</text>
+
+  <!-- JTAG Boundary Scan Routing Lines between JTAG Adapter and MCU/FPGA -->
+  <path d="M 750 510 L 700 510" class="wire-jtag" marker-end="url(#arrow-jtag)" />
+  <path d="M 750 530 L 350 530" class="wire-jtag" marker-end="url(#arrow-jtag)" />
+  <text x="710" y="500" class="tag-jtag">JTAG bus (FPGA)</text>
+  <text x="360" y="525" class="tag-jtag">JTAG bus (MCU)</text>
+
+  <!-- Inter-IC SPI Link -->
+  <path d="M 350 605 L 400 605" class="wire-gpio" />
+  <text x="355" y="598" class="tag-pwr" fill="#a855f7">SPI+INT</text>
+
+  <!-- Common Ground Bus -->
+  <rect x="50" y="665" width="1000" height="20" fill="#090d16" stroke="#10b981" rx="4" />
+  <text x="550" y="679" text-anchor="middle" class="label" fill="#10b981">COMMON STAR GROUND BUS (GND) — ZERO VOLT REFERENCE</text>
+</svg>
