@@ -1,0 +1,602 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PASS Unified Engineering Workbench</title>
+  <link rel="stylesheet" href="styles.css">
+  <script src="vendor/three.min.js"></script>
+</head>
+<body>
+  <!-- Global Application Header -->
+  <header>
+    <div class="brand">
+      <h1>PASS Unified Engineering Workbench</h1>
+      <span class="tag">R&D Internship 2026–2027</span>
+    </div>
+    <div class="header-status">
+      <div id="backend-status-pill" class="status-pill">
+        <span class="status-dot"></span>
+        <span id="backend-status-text">C++17 Engine Connected</span>
+      </div>
+      <button class="btn btn-secondary" style="padding: 0.35rem 0.75rem; font-size: 0.8rem;" onclick="refreshAllViews()">⟳ Refresh</button>
+    </div>
+  </header>
+
+  <!-- Navigation Tabs -->
+  <nav class="tabs">
+    <button class="tab-btn active" onclick="switchTab('geometry')">📐 1. Geometry (CAD/STL)</button>
+    <button class="tab-btn" onclick="switchTab('thermal')">🔥 2. Thermal Analysis</button>
+    <button class="tab-btn" onclick="switchTab('performance')">⚡ 3. Multicore Performance</button>
+    <button class="tab-btn" onclick="switchTab('hardware')">🔌 4. Embedded Hardware</button>
+    <button class="tab-btn" onclick="switchTab('backprop')">🧠 5. Backpropagation</button>
+  </nav>
+
+  <!-- Main Viewports -->
+  <main>
+    <!-- ======================================================== -->
+    <!-- VIEW 1: GEOMETRY (CAD / STL)                            -->
+    <!-- ======================================================== -->
+    <div id="view-geometry" class="view-panel active">
+      <div id="stl-error-banner" class="error-banner"></div>
+      <div class="grid-2col">
+        <!-- Sidebar Controls -->
+        <div>
+          <div class="card">
+            <div class="card-title">
+              <span>STL File Selection</span>
+              <span class="badge blue">Task B</span>
+            </div>
+            <div class="form-group">
+              <label for="stl-preset-select">Preset Datasets:</label>
+              <select id="stl-preset-select" class="form-control" onchange="loadStlPreset()">
+                <option value="data/sample_bracket.stl">sample_bracket.stl (Valid Heat Sink)</option>
+                <option value="data/malformed_geometry.stl">malformed_geometry.stl (Syntax Error / NaN)</option>
+                <option value="data/empty_geometry.stl">empty_geometry.stl (0 Bytes Empty)</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="stl-file-input">Or Upload Custom ASCII STL:</label>
+              <input type="file" id="stl-file-input" class="form-control" accept=".stl" onchange="handleStlFileUpload(event)">
+            </div>
+            <div class="btn-group" style="margin-top: 1rem;">
+              <button class="btn" onclick="loadStlPreset()">Parse & Render STL</button>
+              <button class="btn btn-secondary" onclick="resetStlCamera()">Fit to View</button>
+              <button class="btn btn-secondary" onclick="toggleStlWireframe()">Toggle Wireframe</button>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-title">Geometry Metadata</div>
+            <table class="data-table">
+              <tr><td>Solid Name</td><td id="stl-meta-solid" style="font-weight: 700; color: var(--accent-cyan);">—</td></tr>
+              <tr><td>Triangles</td><td id="stl-meta-triangles">—</td></tr>
+              <tr><td>Bounding Box X</td><td id="stl-meta-bbox-x">—</td></tr>
+              <tr><td>Bounding Box Y</td><td id="stl-meta-bbox-y">—</td></tr>
+              <tr><td>Bounding Box Z</td><td id="stl-meta-bbox-z">—</td></tr>
+              <tr><td>Bounding Radius</td><td id="stl-meta-radius">—</td></tr>
+              <tr><td>Spatial Units</td><td>Meters [m]</td></tr>
+            </table>
+          </div>
+
+          <div class="card">
+            <div class="card-title">Controls Guide</div>
+            <p style="font-size: 0.82rem; color: var(--text-secondary); line-height: 1.4;">
+              • <strong>Left Mouse:</strong> Rotate 3D geometry<br>
+              • <strong>Right Mouse:</strong> Pan view plane<br>
+              • <strong>Scroll Wheel:</strong> Zoom in / out<br>
+              • <strong>C++ Parser:</strong> Validates face normals, verifies triangle topology, rejects malformed/non-finite coords.
+            </p>
+          </div>
+        </div>
+
+        <!-- 3D STL Canvas -->
+        <div>
+          <div class="canvas-container" id="stl-canvas-container">
+            <div class="canvas-overlay">
+              <span id="stl-overlay-status">Ready. Select or drag an STL file.</span>
+            </div>
+            <div class="canvas-controls">
+              <button class="btn btn-secondary" style="font-size: 0.75rem; padding: 0.35rem 0.65rem;" onclick="resetStlCamera()">⤢ Fit to View</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ======================================================== -->
+    <!-- VIEW 2: THERMAL ANALYSIS (FEA & ANSYS)                  -->
+    <!-- ======================================================== -->
+    <div id="view-thermal" class="view-panel">
+      <!-- Top Switcher -->
+      <div style="display: flex; gap: 0.75rem; margin-bottom: 1.25rem;">
+        <button id="thermal-subtab-fea-btn" class="btn" onclick="switchThermalSubtab('fea')">1D FEA Thermal Rod Solver (Task C)</button>
+        <button id="thermal-subtab-ansys-btn" class="btn btn-secondary" onclick="switchThermalSubtab('ansys')">ANSYS 3D Nodal Temperature Cloud (Task B)</button>
+      </div>
+
+      <!-- SUBTAB A: 1D Thermal FEA Rod Solver -->
+      <div id="thermal-subtab-fea">
+        <div id="fea-error-banner" class="error-banner"></div>
+        <div class="grid-2col">
+          <!-- Parameter Inputs -->
+          <div>
+            <div class="card">
+              <div class="card-title">
+                <span>Thermal FEA Parameters</span>
+                <span class="badge green">Task C</span>
+              </div>
+              <div class="form-group">
+                <label>Rod Length $L$ [m]:</label>
+                <input type="number" id="fea-param-L" class="form-control" value="1.0" step="0.1">
+              </div>
+              <div class="form-group">
+                <label>Cross-Section Area $A$ [m²]:</label>
+                <input type="number" id="fea-param-A" class="form-control" value="0.0001" step="0.00001">
+              </div>
+              <div class="form-group">
+                <label>Conductivity $k$ [W/(m K)]:</label>
+                <input type="number" id="fea-param-k" class="form-control" value="10.0" step="1.0">
+              </div>
+              <div class="form-group">
+                <label>Heat Generation $q$ [W/m³]:</label>
+                <input type="number" id="fea-param-q" class="form-control" value="10000.0" step="1000">
+              </div>
+              <div class="form-group">
+                <label>Left Temp $T(0)$ [°C]:</label>
+                <input type="number" id="fea-param-T0" class="form-control" value="100.0" step="5">
+              </div>
+              <div class="form-group">
+                <label>Right Temp $T(L)$ [°C]:</label>
+                <input type="number" id="fea-param-TL" class="form-control" value="20.0" step="5">
+              </div>
+              <div class="form-group">
+                <label>Mesh Elements $N$:</label>
+                <select id="fea-param-N" class="form-control">
+                  <option value="10" selected>N = 10 elements (h = 0.100 m)</option>
+                  <option value="20">N = 20 elements (h = 0.050 m)</option>
+                  <option value="40">N = 40 elements (h = 0.025 m)</option>
+                  <option value="80">N = 80 elements (h = 0.0125 m)</option>
+                </select>
+              </div>
+              <div class="btn-group" style="margin-top: 1rem;">
+                <button class="btn" onclick="runFeaSolve()">Solve FEA</button>
+                <button class="btn btn-secondary" onclick="runFeaConvergence()">Study Convergence</button>
+                <button class="btn btn-success" onclick="exportFeaCsv()">Export CSV</button>
+              </div>
+            </div>
+
+            <div class="card">
+              <div class="card-title">Interdisciplinary Insight</div>
+              <p style="font-size: 0.82rem; color: var(--text-secondary); line-height: 1.45;">
+                • <strong>Discrete Green's Property:</strong> Linear FEA with lumped/consistent loads matches the exact solution <em>identically</em> at all interior nodes ($e_{node} \approx 0$).<br>
+                • <strong>Midpoint Error:</strong> Evaluating errors at element midpoints reveals the true discretization error $e_{mid} = \frac{q h^2}{8k}$.<br>
+                • <strong>Mesh Convergence:</strong> Halving element length $h$ reduces midpoint error by exactly $4\times$, proving asymptotic $O(h^2)$ second-order convergence.
+              </p>
+            </div>
+          </div>
+
+          <!-- FEA Temperature Plot and Convergence Table -->
+          <div>
+            <div class="card">
+              <div class="card-title">Temperature Distribution $T(x)$ vs Position $x$</div>
+              <div style="width: 100%; height: 320px; background: #0f172a; border-radius: 6px; position: relative;">
+                <canvas id="fea-canvas" width="600" height="320" style="width: 100%; height: 100%;"></canvas>
+              </div>
+            </div>
+
+            <div class="card">
+              <div class="card-title">Mesh Convergence Study Table ($N = 10, 20, 40, 80$)</div>
+              <table class="data-table" id="fea-convergence-table">
+                <thead>
+                  <tr>
+                    <th>Elements $N$</th>
+                    <th>Element Length $h$ [m]</th>
+                    <th>Max Node Error [°C]</th>
+                    <th>Max Midpoint Error [°C]</th>
+                    <th>Theoretical $qh^2/(8k)$</th>
+                    <th>Convergence Rate $p$</th>
+                  </tr>
+                </thead>
+                <tbody id="fea-convergence-body">
+                  <tr><td colspan="6" style="text-align: center; color: var(--text-muted);">Loading convergence study...</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- SUBTAB B: ANSYS 3D Nodal Temperature Cloud -->
+      <div id="thermal-subtab-ansys" style="display: none;">
+        <div id="ansys-error-banner" class="error-banner"></div>
+        <div class="grid-2col">
+          <div>
+            <div class="card">
+              <div class="card-title">
+                <span>ANSYS CSV Data Selection</span>
+                <span class="badge blue">Task B</span>
+              </div>
+              <div class="form-group">
+                <label>Preset Datasets:</label>
+                <select id="ansys-preset-select" class="form-control" onchange="loadAnsysPreset()">
+                  <option value="data/ansys_thermal_synthetic.csv">ansys_thermal_synthetic.csv (Synthetic 525 nodes)</option>
+                  <option value="data/ansys_malformed.csv">ansys_malformed.csv (Malformed Schema / NaN)</option>
+                  <option value="data/ansys_empty.csv">ansys_empty.csv (0 Bytes Empty)</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label>Or Upload ANSYS CSV Export:</label>
+                <input type="file" id="ansys-file-input" class="form-control" accept=".csv" onchange="handleAnsysFileUpload(event)">
+              </div>
+              <div class="btn-group" style="margin-top: 1rem;">
+                <button class="btn" onclick="loadAnsysPreset()">Parse & Render Points</button>
+                <button class="btn btn-secondary" onclick="resetAnsysCamera()">Fit to View</button>
+              </div>
+            </div>
+
+            <div class="card">
+              <div class="card-title">Nodal Data Metadata</div>
+              <table class="data-table">
+                <tr><td>Provenance</td><td id="ansys-meta-provenance" style="font-size: 0.75rem; color: var(--accent-cyan);">Synthetic ANSYS 2024 R1</td></tr>
+                <tr><td>Node Count</td><td id="ansys-meta-nodes">—</td></tr>
+                <tr><td>Min Temperature</td><td id="ansys-meta-tmin">—</td></tr>
+                <tr><td>Max Temperature</td><td id="ansys-meta-tmax">—</td></tr>
+                <tr><td>Average Temperature</td><td id="ansys-meta-tavg">—</td></tr>
+                <tr><td>Spatial Extents</td><td id="ansys-meta-extents">—</td></tr>
+              </table>
+            </div>
+
+            <div class="card">
+              <div class="card-title">Node Inspection (Click / Hover)</div>
+              <div id="ansys-inspected-node" style="font-family: var(--mono-family); font-size: 0.85rem; color: var(--accent-cyan);">
+                Hover or click any node point in the 3D viewport to inspect its ID, coordinates, and temperature.
+              </div>
+            </div>
+          </div>
+
+          <div>
+            <div class="canvas-container" id="ansys-canvas-container">
+              <div class="canvas-overlay">
+                <span id="ansys-overlay-status">Ready. Select or drag an ANSYS CSV file.</span>
+              </div>
+              <div class="legend-bar">
+                <div style="font-weight: 700;">Temperature [°C]</div>
+                <div class="colormap-gradient"></div>
+                <div class="legend-labels">
+                  <span id="legend-min-t">20°C</span>
+                  <span id="legend-mid-t">60°C</span>
+                  <span id="legend-max-t">100°C</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ======================================================== -->
+    <!-- VIEW 3: MULTICORE PERFORMANCE                           -->
+    <!-- ======================================================== -->
+    <div id="view-performance" class="view-panel">
+      <div class="card">
+        <div class="card-title">
+          <span>Multicore Batch Thermal Solver Benchmarking</span>
+          <span class="badge orange">Task D</span>
+        </div>
+        <p style="color: var(--text-secondary); font-size: 0.88rem; margin-bottom: 1rem;">
+          Executes a reproducible batch of independent 1D thermal solves across varying positive thermal conductivities $k$ and heat generation rates $q$.
+          Uses a bounded C++ worker thread pool (`std::thread`) and verifies strict serial/parallel numerical agreement ($\max |\Delta T| \le 10^{-8\ \circ}$C).
+        </p>
+
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 1rem;">
+          <div class="form-group">
+            <label>Batch Case Count:</label>
+            <input type="number" id="mc-param-cases" class="form-control" value="2000" step="500">
+          </div>
+          <div class="form-group">
+            <label>Mesh Size $N$ per Solve:</label>
+            <input type="number" id="mc-param-mesh" class="form-control" value="100" step="20">
+          </div>
+          <div class="form-group">
+            <label>Fixed Random Seed:</label>
+            <input type="number" id="mc-param-seed" class="form-control" value="42">
+          </div>
+          <div style="display: flex; align-items: flex-end; gap: 0.5rem;">
+            <button class="btn" id="mc-run-btn" onclick="runMulticoreBenchmark()">▶ Run Benchmark</button>
+            <button class="btn btn-success" onclick="exportMulticoreCsv()">Export CSV</button>
+          </div>
+        </div>
+
+        <div class="progress-bar-container" id="mc-progress-container">
+          <div class="progress-bar" id="mc-progress-bar"></div>
+        </div>
+      </div>
+
+      <div class="grid-2col">
+        <div>
+          <div class="card">
+            <div class="card-title">Host Machine Specs & Environment</div>
+            <table class="data-table">
+              <tr><td>Processor</td><td id="mc-sys-cpu" style="font-weight: 700; color: var(--accent-cyan);">AMD Ryzen 5 (AMD64 Family 25 Model 80 Stepping 0)</td></tr>
+              <tr><td>Physical / Logical Cores</td><td id="mc-sys-cores">6 Physical / 12 Logical Cores</td></tr>
+              <tr><td>Total System RAM</td><td id="mc-sys-ram">7.35 GB Usable</td></tr>
+              <tr><td>Compiler & Target</td><td id="mc-sys-compiler">GCC 14.1.0 (MinGW-w64 x86_64)</td></tr>
+              <tr><td>Optimization Flags</td><td id="mc-sys-flags" style="font-family: var(--mono-family);">-O3 -std=c++17 -march=x86-64</td></tr>
+              <tr><td>Warm-up Run</td><td id="mc-sys-warmup">6.00 ms (Excluded from timings)</td></tr>
+              <tr><td>Launch-to-Ready Time</td><td id="mc-sys-launch">12.40 ms (Reported separately)</td></tr>
+            </table>
+          </div>
+
+          <div class="card">
+            <div class="card-title">Agreement Verification Status</div>
+            <div id="mc-agreement-badge" class="status-pill" style="margin-bottom: 0.5rem;">
+              <span class="status-dot"></span>
+              <span id="mc-agreement-text">Agreement Verified: Max Diff <= 1e-8 °C</span>
+            </div>
+            <p style="font-size: 0.8rem; color: var(--text-secondary); line-height: 1.4;">
+              Deterministic input order is strictly preserved. Both serial and parallel variants execute identical discretized numerical operators.
+            </p>
+          </div>
+        </div>
+
+        <div>
+          <div class="card">
+            <div class="card-title">Benchmark Results (5 Measured Repetitions per Worker Count)</div>
+            <table class="data-table" id="mc-results-table">
+              <thead>
+                <tr>
+                  <th>Workers $p$</th>
+                  <th>Rep 1–5 [ms]</th>
+                  <th>Median Time [ms]</th>
+                  <th>Speedup $T_1/T_p$</th>
+                  <th>Efficiency $(T_1/T_p)/p$</th>
+                  <th>Agreement</th>
+                </tr>
+              </thead>
+              <tbody id="mc-results-body">
+                <tr><td colspan="6" style="text-align: center; color: var(--text-muted);">Click "Run Benchmark" to execute benchmark.</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="card">
+            <div class="card-title">Speedup & Scaling Chart</div>
+            <div style="width: 100%; height: 260px; background: #0f172a; border-radius: 6px; position: relative;">
+              <canvas id="mc-chart-canvas" width="600" height="260" style="width: 100%; height: 100%;"></canvas>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ======================================================== -->
+    <!-- VIEW 4: EMBEDDED HARDWARE                               -->
+    <!-- ======================================================== -->
+    <div id="view-hardware" class="view-panel">
+      <div class="card">
+        <div class="card-title">
+          <span>Modular Host-Connected Embedded System Integration</span>
+          <span class="badge blue">Task E</span>
+        </div>
+        <p style="color: var(--text-secondary); font-size: 0.88rem; margin-bottom: 0.5rem;">
+          Demonstrates communication with three independent embedded device classes: Microcontroller, FPGA, and JTAG Debug Probe.
+          Includes C++ mock adapters, telemetry streaming, fault injection, and automated exponential backoff recovery.
+        </p>
+        <div style="background: rgba(245, 158, 11, 0.1); border: 1px solid rgba(245, 158, 11, 0.3); border-radius: 6px; padding: 0.65rem 0.9rem; font-size: 0.82rem; color: #fbbf24;">
+          ⚠️ <strong>All device behaviours, registers, and telemetry are simulated.</strong> Physical wiring, PCB fabrication, and FPGA bitstream flashing are outside evaluation scope.
+        </div>
+      </div>
+
+      <div class="grid-3col">
+        <!-- Device 1: Microcontroller -->
+        <div class="card" id="card-mcu">
+          <div class="card-title">
+            <span>STM32H753ZI MCU</span>
+            <span id="badge-mcu" class="badge green">CONNECTED</span>
+          </div>
+          <p style="font-size: 0.78rem; color: var(--text-secondary); margin-bottom: 0.75rem;">
+            Arm Cortex-M7 @ 480MHz | 3.3V Domain | USB CDC-ACM (115200 baud)
+          </p>
+          <div class="telemetry-grid">
+            <div class="telemetry-item">
+              <div class="telemetry-label">Core Temp</div>
+              <div id="mcu-temp" class="telemetry-val">42.5 °C</div>
+            </div>
+            <div class="telemetry-item">
+              <div class="telemetry-label">VDD Supply</div>
+              <div id="mcu-vdd" class="telemetry-val">3.31 V</div>
+            </div>
+            <div class="telemetry-item">
+              <div class="telemetry-label">CPU Load</div>
+              <div id="mcu-load" class="telemetry-val">28.5 %</div>
+            </div>
+            <div class="telemetry-item">
+              <div class="telemetry-label">Packets</div>
+              <div id="mcu-packets" class="telemetry-val">124</div>
+            </div>
+          </div>
+          <div class="btn-group" style="margin-top: 1rem;">
+            <button class="btn btn-secondary" onclick="toggleDevice('mcu-stm32h7')">Connect / Disconnect</button>
+            <button class="btn btn-danger" onclick="injectFault('mcu-stm32h7')">⚡ Inject Timeout</button>
+            <button class="btn btn-success" onclick="recoverDevice('mcu-stm32h7')">↺ Recover</button>
+          </div>
+        </div>
+
+        <!-- Device 2: FPGA -->
+        <div class="card" id="card-fpga">
+          <div class="card-title">
+            <span>Xilinx Artix-7 FPGA</span>
+            <span id="badge-fpga" class="badge green">CONNECTED</span>
+          </div>
+          <p style="font-size: 0.78rem; color: var(--text-secondary); margin-bottom: 0.75rem;">
+            XC7A100T-1CSG324C | 1.0V/1.8V/3.3V | FTDI USB FIFO (40 MB/s)
+          </p>
+          <div class="telemetry-grid">
+            <div class="telemetry-item">
+              <div class="telemetry-label">Die Temp</div>
+              <div id="fpga-temp" class="telemetry-val">49.8 °C</div>
+            </div>
+            <div class="telemetry-item">
+              <div class="telemetry-label">VCCINT Core</div>
+              <div id="fpga-vint" class="telemetry-val">1.002 V</div>
+            </div>
+            <div class="telemetry-item">
+              <div class="telemetry-label">LUT Usage</div>
+              <div id="fpga-lut" class="telemetry-val">44.2 %</div>
+            </div>
+            <div class="telemetry-item">
+              <div class="telemetry-label">Frames</div>
+              <div id="fpga-frames" class="telemetry-val">840</div>
+            </div>
+          </div>
+          <div class="btn-group" style="margin-top: 1rem;">
+            <button class="btn btn-secondary" onclick="toggleDevice('fpga-artix7')">Connect / Disconnect</button>
+            <button class="btn btn-danger" onclick="injectFault('fpga-artix7')">⚡ Inject Timeout</button>
+            <button class="btn btn-success" onclick="recoverDevice('fpga-artix7')">↺ Recover</button>
+          </div>
+        </div>
+
+        <!-- Device 3: JTAG Debug Adapter -->
+        <div class="card" id="card-jtag">
+          <div class="card-title">
+            <span>JTAG Debug Adapter</span>
+            <span id="badge-jtag" class="badge green">CONNECTED</span>
+          </div>
+          <p style="font-size: 0.78rem; color: var(--text-secondary); margin-bottom: 0.75rem;">
+            TAP Controller & Probe | 1.2V–5.0V VREF Sense | USB 2.0 High-Speed
+          </p>
+          <div class="telemetry-grid">
+            <div class="telemetry-item">
+              <div class="telemetry-label">Target VREF</div>
+              <div id="jtag-vref" class="telemetry-val">3.305 V</div>
+            </div>
+            <div class="telemetry-item">
+              <div class="telemetry-label">TCK Speed</div>
+              <div id="jtag-tck" class="telemetry-val">10.0 MHz</div>
+            </div>
+            <div class="telemetry-item">
+              <div class="telemetry-label">TAP State</div>
+              <div id="jtag-tap" class="telemetry-val" style="font-size: 0.85rem;">Run-Test/Idle</div>
+            </div>
+            <div class="telemetry-item">
+              <div class="telemetry-label">Scan Chain</div>
+              <div id="jtag-chain" class="telemetry-val">2 TAPs</div>
+            </div>
+          </div>
+          <div class="btn-group" style="margin-top: 1rem;">
+            <button class="btn btn-secondary" onclick="toggleDevice('jtag-probe')">Connect / Disconnect</button>
+            <button class="btn btn-danger" onclick="injectFault('jtag-probe')">⚡ Inject Timeout</button>
+            <button class="btn btn-success" onclick="recoverDevice('jtag-probe')">↺ Recover</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Architectural Note on JTAG vs Compute Boards -->
+      <div class="card" style="margin-top: 1.25rem;">
+        <div class="card-title">Architectural Distinction: Why JTAG is a Debug Interface, NOT a Compute Board</div>
+        <p style="font-size: 0.84rem; color: var(--text-secondary); line-height: 1.5;">
+          A JTAG debug adapter (such as a SEGGER J-Link or FTDI FT2232H) is fundamentally an <strong>external test access port (TAP) master</strong> operating under the IEEE 1149.1 standard.
+          It does not execute application compute workloads, host general-purpose operating systems, or exchange application data packets with the host.
+          Instead, it senses target rail voltage ($V_{\text{REF}}$), drives synchronous clock ($TCK$) and state select ($TMS$), shifts bitstreams in/out of boundary-scan registers ($TDI$/$TDO$), and controls active-low reset lines ($nSRST$/$nTRST$).
+          Assuming all boards share a single connector, voltage domain, or communication protocol would risk catastrophic electrical overstress (e.g. driving 5V logic into a 1.0V/1.8V FPGA bank).
+        </p>
+      </div>
+    </div>
+
+    <!-- ======================================================== -->
+    <!-- VIEW 5: BACKPROPAGATION                                 -->
+    <!-- ======================================================== -->
+    <div id="view-backprop" class="view-panel">
+      <div class="card">
+        <div class="card-title">
+          <span>Simple Handwritten Backpropagation & C++ Gradient Verification</span>
+          <span class="badge purple">Task F</span>
+        </div>
+        <p style="color: var(--text-secondary); font-size: 0.88rem; line-height: 1.5;">
+          For one regression sample $x = 1, y = 2$, hidden state $h = \tanh(wx + b)$, prediction $\hat{y} = vh + c$, and loss $J = \frac{1}{2}(\hat{y} - y)^2$.<br>
+          Initial parameters: $w = 0.5, b = 0.0, v = 1.0, c = 0.0$, learning rate $\eta = 0.1$.
+        </p>
+      </div>
+
+      <div class="grid-2col">
+        <div>
+          <div class="card">
+            <div class="card-title">Step 1: Forward Pass & Initial Loss</div>
+            <table class="data-table">
+              <tr><td>Input $x$</td><td style="font-family: var(--mono-family);">1.0</td></tr>
+              <tr><td>Target $y$</td><td style="font-family: var(--mono-family);">2.0</td></tr>
+              <tr><td>Affine $z = wx + b$</td><td style="font-family: var(--mono-family);">0.5(1) + 0 = 0.500000</td></tr>
+              <tr><td>Activation $h = \tanh(z)$</td><td style="font-family: var(--mono-family);">0.462117</td></tr>
+              <tr><td>Prediction $\hat{y} = vh + c$</td><td style="font-family: var(--mono-family);">1(0.462117) + 0 = 0.462117</td></tr>
+              <tr><td>Residual $\hat{y} - y$</td><td style="font-family: var(--mono-family);">-1.537883</td></tr>
+              <tr><td>Initial Loss $J_0$</td><td style="font-weight: 700; color: var(--accent-cyan); font-family: var(--mono-family);">1.182542</td></tr>
+            </table>
+          </div>
+
+          <div class="card">
+            <div class="card-title">Central Finite Difference Check ($\epsilon = 10^{-6}$)</div>
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Param $\theta$</th>
+                  <th>Analytical $\frac{\partial J}{\partial \theta}$</th>
+                  <th>Numerical $\frac{\Delta J}{2\epsilon}$</th>
+                  <th>Abs Error</th>
+                  <th>Pass ($\le 10^{-5}$)</th>
+                </tr>
+              </thead>
+              <tbody id="backprop-checks-body">
+                <tr><td>$w$</td><td>-1.209464</td><td>-1.209464</td><td>0.000000</td><td><span class="badge green">PASS</span></td></tr>
+                <tr><td>$b$</td><td>-1.209464</td><td>-1.209464</td><td>0.000000</td><td><span class="badge green">PASS</span></td></tr>
+                <tr><td>$v$</td><td>-0.710682</td><td>-0.710682</td><td>0.000000</td><td><span class="badge green">PASS</span></td></tr>
+                <tr><td>$c$</td><td>-1.537883</td><td>-1.537883</td><td>0.000000</td><td><span class="badge green">PASS</span></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="card">
+            <div class="card-title">Step 1 Simultaneous Parameter Update ($\eta = 0.1$)</div>
+            <table class="data-table">
+              <tr><td>$w_{new} = w - 0.1 \frac{\partial J}{\partial w}$</td><td style="font-family: var(--mono-family);">0.500000 - 0.1(-1.209464) = <strong>0.620946</strong></td></tr>
+              <tr><td>$b_{new} = b - 0.1 \frac{\partial J}{\partial b}$</td><td style="font-family: var(--mono-family);">0.000000 - 0.1(-1.209464) = <strong>0.120946</strong></td></tr>
+              <tr><td>$v_{new} = v - 0.1 \frac{\partial J}{\partial v}$</td><td style="font-family: var(--mono-family);">1.000000 - 0.1(-0.710682) = <strong>1.071068</strong></td></tr>
+              <tr><td>$c_{new} = c - 0.1 \frac{\partial J}{\partial c}$</td><td style="font-family: var(--mono-family);">0.000000 - 0.1(-1.537883) = <strong>0.153788</strong></td></tr>
+              <tr><td>Step 1 Loss $J_1$</td><td style="color: var(--accent-green); font-weight: 700; font-family: var(--mono-family);">0.685774 (Reduced by 42%)</td></tr>
+            </table>
+          </div>
+        </div>
+
+        <div>
+          <div class="card">
+            <div class="card-title">
+              <span>Training Loss over 100 Subsequent Steps</span>
+              <button class="btn btn-success" style="font-size: 0.75rem; padding: 0.3rem 0.65rem;" onclick="exportBackpropCsv()">Export CSV</button>
+            </div>
+            <div style="width: 100%; height: 320px; background: #0f172a; border-radius: 6px; position: relative;">
+              <canvas id="backprop-canvas" width="600" height="320" style="width: 100%; height: 100%;"></canvas>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-title">Handwritten Derivation Documentation</div>
+            <p style="font-size: 0.84rem; color: var(--text-secondary); line-height: 1.5; margin-bottom: 0.75rem;">
+              The exact handwritten chain-rule derivatives, forward pass, and numerical substitutions are documented in the two-page handwritten report appendix:
+            </p>
+            <div class="btn-group">
+              <a href="../../docs/handwritten_backprop/handwritten_backprop.pdf" target="_blank" class="btn btn-secondary">📄 View Handwritten Derivation PDF</a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- Global Footer -->
+  <footer>
+    <div>PASS Unified Engineering Workbench | Windows 11 x64 Standalone Package</div>
+    <div>C++17 Core Engine | GCC 14.1.0 | Offline Three.js Renderer</div>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>
